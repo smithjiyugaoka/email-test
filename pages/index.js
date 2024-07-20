@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const factors = [
   { id: 'salary', name: 'Salary' },
@@ -18,9 +19,9 @@ export default function Home() {
   const [userFactors, setUserFactors] = useState(
     Object.fromEntries(factors.map(factor => [factor.id, 5]))
   );
-  const [results, setResults] = useState(null);
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [showResults, setShowResults] = useState(false);
 
   const handleFactorChange = (id, value) => {
     setUserFactors(prev => ({ ...prev, [id]: parseInt(value) }));
@@ -38,8 +39,7 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setResults(data);
+        setShowResults(true);
       } else {
         setMessage('Failed to match companies. Please try again.');
       }
@@ -56,16 +56,11 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          subject: 'Your Company Matches',
-          body: `Here are your top company matches:\n\n${results.topMatches.map((match, index) => `${index + 1}. ${match.name}`).join('\n')}`,
-        }),
+        body: JSON.stringify({ email, factors: userFactors }),
       });
 
       if (response.ok) {
-        setMessage('Top matches sent to your email!');
-        setResults(prev => ({ ...prev, unlocked: true }));
+        setMessage('Top 5 matches sent to your email!');
       } else {
         setMessage('Failed to send email. Please try again.');
       }
@@ -75,85 +70,76 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white text-gray-900 font-sans">
       <Head>
         <title>Company Matcher</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
-        <h1 className="text-4xl font-bold mb-8">Company Matcher</h1>
-        <form onSubmit={handleSubmit} className="max-w-md mb-8">
-          {factors.map(factor => (
-            <div key={factor.id} className="mb-4">
-              <label htmlFor={factor.id} className="block text-sm font-medium text-gray-700">
-                {factor.name}: {userFactors[factor.id]}
-              </label>
-              <input
-                type="range"
-                id={factor.id}
-                min="1"
-                max="10"
-                value={userFactors[factor.id]}
-                onChange={(e) => handleFactorChange(factor.id, e.target.value)}
-                className="mt-1 block w-full"
-              />
-            </div>
-          ))}
-          <button
-            type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            Find Matches
-          </button>
-        </form>
-
-        {results && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Your Matches</h2>
-            {results.visibleMatches.map((match, index) => (
-              <div key={match.name} className="mb-2 p-2 bg-gray-100 rounded">
-                <h3 className="font-semibold">{index + 4}. {match.name}</h3>
-              </div>
-            ))}
-            {!results.unlocked && (
-              <div className="mt-4">
-                <h3 className="text-xl font-bold mb-2">Top 3 Matches (Blurred)</h3>
-                {results.topMatches.map((match, index) => (
-                  <div key={match.name} className="mb-2 p-2 bg-gray-100 rounded filter blur-sm">
-                    <h3 className="font-semibold">{index + 1}. {match.name}</h3>
+      <main className="max-w-lg mx-auto p-6">
+        <AnimatePresence mode="wait">
+          {!showResults ? (
+            <motion.div
+              key="factors"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <h1 className="text-3xl font-bold mb-8">Company Matcher</h1>
+              <form onSubmit={handleSubmit}>
+                {factors.map(factor => (
+                  <div key={factor.id} className="mb-6">
+                    <label htmlFor={factor.id} className="block text-sm font-medium mb-2">
+                      {factor.name}: {userFactors[factor.id]}
+                    </label>
+                    <input
+                      type="range"
+                      id={factor.id}
+                      min="1"
+                      max="10"
+                      value={userFactors[factor.id]}
+                      onChange={(e) => handleFactorChange(factor.id, e.target.value)}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
                   </div>
                 ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {results && !results.unlocked && (
-          <form onSubmit={handleUnlock} className="max-w-md">
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Enter your email to unlock top matches
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                <button
+                  type="submit"
+                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition duration-200"
+                >
+                  Find Matches
+                </button>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
-              Unlock Top Matches
-            </button>
-          </form>
-        )}
-
-        {message && <p className="mt-4 text-lg">{message}</p>}
+              <h2 className="text-2xl font-bold mb-4">Your Top Matches</h2>
+              <p className="mb-4">We've found your top 5 company matches based on your preferences.</p>
+              <form onSubmit={handleUnlock} className="mb-4">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-green-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-600 transition duration-200"
+                >
+                  Get My Top 5 Matches
+                </button>
+              </form>
+              {message && <p className="text-center text-sm text-gray-600">{message}</p>}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
