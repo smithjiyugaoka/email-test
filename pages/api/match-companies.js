@@ -25,7 +25,10 @@ export default function handler(req, res) {
   if (req.method === 'POST') {
     const userFactors = req.body;
     const matches = matchCompanies(userFactors);
-    res.status(200).json({ success: true });
+    res.status(200).json({
+      topMatches: matches.slice(0, 3),
+      visibleMatches: matches.slice(3, 5)
+    });
   } else {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
