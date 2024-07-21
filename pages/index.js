@@ -19,7 +19,6 @@ export default function Home() {
     Object.fromEntries(factors.map(factor => [factor.id, 5]))
   );
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
   const [showResults, setShowResults] = useState(false);
 
   const handleFactorChange = (id, value) => {
@@ -28,66 +27,31 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch('/api/match-companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userFactors),
-      });
-
-      if (response.ok) {
-        setShowResults(true);
-      } else {
-        setMessage('Failed to match companies. Please try again.');
-      }
-    } catch (error) {
-      setMessage('An error occurred. Please try again.');
-    }
+    setShowResults(true);
+    // Implement API call here
   };
 
   const handleUnlock = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, factors: userFactors }),
-      });
-
-      if (response.ok) {
-        setMessage('Top 5 matches sent to your email!');
-      } else {
-        setMessage('Failed to send email. Please try again.');
-      }
-    } catch (error) {
-      setMessage('An error occurred. Please try again.');
-    }
+    // Implement email submission logic here
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <Head>
         <title>Company Matcher</title>
         <link rel="icon" href="/favicon.ico" />
-        <style>{`
-          .fade-enter { opacity: 0; }
-          .fade-enter-active { opacity: 1; transition: opacity 300ms ease-in; }
-          .fade-exit { opacity: 1; }
-          .fade-exit-active { opacity: 0; transition: opacity 300ms ease-in; }
-        `}</style>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <main className="max-w-lg mx-auto p-6">
-        <div className={`transition-opacity duration-300 ${showResults ? 'opacity-0' : 'opacity-100'}`}>
-          <h1 className="text-3xl font-bold mb-8">Company Matcher</h1>
-          <form onSubmit={handleSubmit}>
+      <main className="max-w-3xl mx-auto p-6 sm:p-10">
+        <h1 className="text-4xl font-bold mb-8 text-center">Company Matcher</h1>
+        
+        {!showResults ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
             {factors.map(factor => (
-              <div key={factor.id} className="mb-6">
-                <label htmlFor={factor.id} className="block text-sm font-medium mb-2">
+              <div key={factor.id} className="flex flex-col sm:flex-row sm:items-center">
+                <label htmlFor={factor.id} className="w-full sm:w-1/3 text-sm font-medium mb-2 sm:mb-0">
                   {factor.name}: {userFactors[factor.id]}
                 </label>
                 <input
@@ -97,40 +61,39 @@ export default function Home() {
                   max="10"
                   value={userFactors[factor.id]}
                   onChange={(e) => handleFactorChange(factor.id, e.target.value)}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full sm:w-2/3 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
             ))}
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition duration-200"
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 transition duration-200 text-lg"
             >
               Find Matches
             </button>
           </form>
-        </div>
-
-        <div className={`transition-opacity duration-300 ${showResults ? 'opacity-100' : 'opacity-0'}`}>
-          <h2 className="text-2xl font-bold mb-4">Your Top Matches</h2>
-          <p className="mb-4">We've found your top 5 company matches based on your preferences.</p>
-          <form onSubmit={handleUnlock} className="mb-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
-            />
-            <button
-              type="submit"
-              className="w-full bg-green-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-600 transition duration-200"
-            >
-              Get My Top 5 Matches
-            </button>
-          </form>
-          {message && <p className="text-center text-sm text-gray-600">{message}</p>}
-        </div>
+        ) : (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-center">Your Top Matches</h2>
+            <p className="text-center">We've found your top 5 company matches based on your preferences.</p>
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
+              />
+              <button
+                type="submit"
+                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition duration-200 text-lg"
+              >
+                Get My Top 5 Matches
+              </button>
+            </form>
+          </div>
+        )}
       </main>
     </div>
   );
